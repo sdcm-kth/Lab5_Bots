@@ -51,10 +51,8 @@ class StateMachine(object):
         print("Did yoou advance?")
         self.cmd_vel_pub = rospy.Publisher(self.cmd_vel_top, Twist, queue_size=10) #node is publishing to cmd_vel topic 
         #With message type Twist and max number of messages is 10
-        self.cube_pose_pub =rospy.Publisher(self.cube_pose_topic, PoseStamped, queue_size=10) 
+        self.cube_pose_pub =rospy.Publisher('/aruco_pose_topic', PoseStamped, queue_size=10) 
         #Wasnt working because I forgot to set parameter on the launch file, topic not initiated
-        print("L2")
-        #self.cube_pose_pub =rospy.Publisher(self.cube_pose_topic, PoseStamped, queue_size=10) 
         print("All publish set")
 
         # Set up action clients
@@ -98,12 +96,12 @@ class StateMachine(object):
 
     def check_states(self):
 
-        while not rospy.is_shutdown() and self.state != 4:
+        while not rospy.is_shutdown() and self.state != 5:
             
             # State 0: Move the robot "manually" to door
             if self.state == 0:
                 move_msg = Twist()
-                move_msg.linear.x = 0.01
+                move_msg.linear.x = 0.001
 
                 rate = rospy.Rate(10)
                 converged = False
@@ -128,14 +126,11 @@ class StateMachine(object):
 
                 if success_tucking:
                     rospy.loginfo("%s: Arm tuck: ", self.node_name)
-                    if self.befstate == 0:
-                        self.state = 2
-                    elif self.befstate == 4:
-                        self.state == 6
+                    self.state = 2
                 else:
                     self.play_motion_ac.cancel_goal()
                     rospy.logerr("%s: play_motion failed to tuck arm, reset simulation", self.node_name)
-                    self.state = 5
+                    self.state = 6
 
                 rospy.sleep(1)
             #State 2: pick 
@@ -153,7 +148,7 @@ class StateMachine(object):
                         rospy.loginfo("%s: Pick motion succeded!",self.node_name)
                     else:
                         rospy.loginfo("%s: Pick motion failed!", self.node_name)
-                        self.state = 5
+                        self.state = 6
                     rospy.sleep(3)
 
                 except rospy.ServiceException,e:
@@ -176,7 +171,7 @@ class StateMachine(object):
                 move_msg.linear.x = 0.5 #U know the drill
                 move_msg.angular.z = 0 #*sigh*
                 cnt = 0
-                while not rospy.is_shutdown() and cnt < 15:
+                while not rospy.is_shutdown() and cnt < 16:
                     self.cmd_vel_pub.publish(move_msg)
                     rate.sleep()
                     cnt = cnt + 1
@@ -185,10 +180,7 @@ class StateMachine(object):
                 rospy.sleep(1)
 
             # State 4:  place aruco
-            #Current error:
-            #Service call to move_head server failed: unable to connect to service:
-            #remote error reported: request from [/robotics_intro/logic_state_machine]:
-            #md5sums do not match: [3ceff7a00b3f71368b0b0f59df1b9c42] vs. [09fb03525b03e7ea1fd3992bafd87e16]
+            #Current error: FIXED
 
             if self.state == 4:
             	try:
@@ -196,17 +188,17 @@ class StateMachine(object):
                     self.set_goal_pose("place")
                     self.cube_pose_pub.publish(self.cube_PoseStamped) #the hell is the cube?
                     rospy.sleep(1)
-                    place_srv = rospy.ServiceProxy(self.place_srv_nm, MoveHead)
+                    place_srv = rospy.ServiceProxy(self.place_srv_nm, SetBool)
                     place_ans = place_srv() #Check requirements
 
                     
                     if place_ans.success == True:
-                        self.state = 1 #Go to Tuck the arm
-                        self.befstate = 4 #To properly go back to tuck and end
+                        self.state = 5 #Fin
+                        #need to go and tuck
                         rospy.loginfo("%s: Aruco correctly placed!", self.node_name)
                     else:
                         rospy.loginfo("%s: Aruco NOOOOOO!", self.node_name)
-                        self.state = 5
+                        self.state = 6
 
                     rospy.sleep(3)
                 
@@ -214,7 +206,7 @@ class StateMachine(object):
                     print "Service call to move_head server failed: %s"%e
 
             # Error handling
-            if self.state == 5:
+            if self.state == 6:
                 rospy.logerr("%s: State machine failed. Check your code and try again!", self.node_name)
                 return
 
