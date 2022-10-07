@@ -73,50 +73,26 @@ class StateMachine(object):
     
     def set_goal_pose(self, action):
         if action == "pick":
+            cube = self.cube_pose
+            cube = cube.split(", ")
+            print(cube)
             self.cube_PoseStamped.header.stamp = rospy.Time.now()
             self.cube_PoseStamped.header.frame_id = self.robot_base_frame_nm
-            self.cube_PoseStamped.pose.position.x = 0.50306828716
-            self.cube_PoseStamped.pose.position.y = 0.0245718046511
-            self.cube_PoseStamped.pose.position.z = 0.915538062216
-            self.cube_PoseStamped.pose.orientation.x = 0.0144467629456 
-            self.cube_PoseStamped.pose.orientation.y = 0.706141958739
-            self.cube_PoseStamped.pose.orientation.z = 0.707257659069
-            self.cube_PoseStamped.pose.orientation.w = -0.0306827123383
-        if action == "place":
-            self.cube_PoseStamped.header.stamp = rospy.Time.now()
-            self.cube_PoseStamped.header.frame_id = self.robot_base_frame_nm
-            self.cube_PoseStamped.pose.position.x = 0.50306828716
-            self.cube_PoseStamped.pose.position.y = 0.0245718046511
-            self.cube_PoseStamped.pose.position.z = 0.915538062216 + 0.03
-            self.cube_PoseStamped.pose.orientation.x = 0.0144467629456 
-            self.cube_PoseStamped.pose.orientation.y = 0.706141958739
-            self.cube_PoseStamped.pose.orientation.z = 0.707257659069
-            self.cube_PoseStamped.pose.orientation.w = -0.0306827123383
+            self.cube_PoseStamped.pose.position.x = float(cube[0])#0.50306828716
+            self.cube_PoseStamped.pose.position.y = float(cube[1])#0.0245718046511
+            self.cube_PoseStamped.pose.position.z = float(cube[2])#0.915538062216
+            self.cube_PoseStamped.pose.orientation.x = float(cube[3])#0.0144467629456 
+            self.cube_PoseStamped.pose.orientation.y = float(cube[4])#0.706141958739
+            self.cube_PoseStamped.pose.orientation.z = float(cube[5])#0.707257659069
+            self.cube_PoseStamped.pose.orientation.w = float(cube[6])#-0.0306827123383
 
 
     def check_states(self):
 
-        while not rospy.is_shutdown() and self.state != 5:
+        while not rospy.is_shutdown() and self.state != 4:
             
-            # State 0: Move the robot "manually" to door
+            # State 0:  Tuck arm 
             if self.state == 0:
-                move_msg = Twist()
-                move_msg.linear.x = 0.001
-
-                rate = rospy.Rate(10)
-                converged = False
-                cnt = 0
-                rospy.loginfo("%s: Moving towards door", self.node_name)
-                while not rospy.is_shutdown() and cnt < 2: #Need to set this
-                    self.cmd_vel_pub.publish(move_msg)
-                    rate.sleep()
-                    cnt = cnt + 1
-
-                self.state = 1
-                rospy.sleep(1)
-
-            # State 1:  Tuck arm 
-            if self.state == 1:
                 rospy.loginfo("%s: Tucking the arm...", self.node_name)
                 goal = PlayMotionGoal()
                 goal.motion_name = 'home'
@@ -126,16 +102,17 @@ class StateMachine(object):
 
                 if success_tucking:
                     rospy.loginfo("%s: Arm tuck: ", self.node_name)
-                    self.state = 2
+                    self.state = 1
                 else:
                     self.play_motion_ac.cancel_goal()
                     rospy.logerr("%s: play_motion failed to tuck arm, reset simulation", self.node_name)
-                    self.state = 6
+                    self.state = 5
 
-                rospy.sleep(1)
-            #State 2: pick 
-            if self.state == 2:
+                rospy.sleep(5)
+            #State 1: pick 
+            if self.state == 1:
                 try:
+
                     rospy.loginfo("%s: Picking",self.node_name)
                     self.set_goal_pose("pick") #Get the coordinates of the cube
                     self.cube_pose_pub.publish(self.cube_PoseStamped) #Publish
@@ -144,18 +121,18 @@ class StateMachine(object):
                     #response type
                     pick_ans = pick_srv()  #Call the service and get a response, formar error would not pick solved set param of base on launch
                     if pick_ans.success==True:
-                        self.state = 3
+                        self.state = 2
                         rospy.loginfo("%s: Pick motion succeded!",self.node_name)
                     else:
                         rospy.loginfo("%s: Pick motion failed!", self.node_name)
-                        self.state = 6
-                    rospy.sleep(3)
+                        self.state = 5
+                    rospy.sleep(5)
 
                 except rospy.ServiceException,e:
                     print "Service call to place server failed: %s"%e
                         
-            # State 3:  Move the robot "manually" to chair 
-            if self.state == 3:
+            # State 2:  Move the robot "manually" to chair 
+            if self.state == 2:
                 move_msg = Twist()
                 move_msg.angular.z = -0.5  #we need to experiment with this
                 rate = rospy.Rate(10) #Hz
@@ -163,42 +140,46 @@ class StateMachine(object):
                 cnt = 0
                 rospy.loginfo("%s: Rotate the robot", self.node_name)
                 while not rospy.is_shutdown() and cnt < 60: # Play with this
-                    self.cmd_vel_pub.publish(move_msg)
+                    self.cmd_vel_pub.publish(move_msg)                   
+                    self.set_goal_pose("place")
+                    self.cube_pose_pub.publish(self.cube_PoseStamped) #the hell is the cube?
+ 
                     rate.sleep()
                     cnt = cnt + 1
+
+                rospy.sleep(1)
 
                 rospy.loginfo("%s: Move the robot to other table", self.node_name)
                 move_msg.linear.x = 0.5 #U know the drill
                 move_msg.angular.z = 0 #*sigh*
                 cnt = 0
-                while not rospy.is_shutdown() and cnt < 16:
+                while not rospy.is_shutdown() and cnt < 18:
                     self.cmd_vel_pub.publish(move_msg)
                     rate.sleep()
                     cnt = cnt + 1
 
-                self.state = 4
+                self.state = 3
+
                 rospy.sleep(1)
 
-            # State 4:  place aruco
+            # State 3:  place aruco
             #Current error: FIXED
 
-            if self.state == 4:
+            if self.state == 3:
             	try:
                     rospy.loginfo("%s: Place cube", self.node_name)
-                    self.set_goal_pose("place")
-                    self.cube_pose_pub.publish(self.cube_PoseStamped) #the hell is the cube?
                     rospy.sleep(1)
                     place_srv = rospy.ServiceProxy(self.place_srv_nm, SetBool)
                     place_ans = place_srv() #Check requirements
 
                     
                     if place_ans.success == True:
-                        self.state = 5 #Fin
+                        self.state = 4 #Fin
                         #need to go and tuck
                         rospy.loginfo("%s: Aruco correctly placed!", self.node_name)
                     else:
-                        rospy.loginfo("%s: Aruco NOOOOOO!", self.node_name)
-                        self.state = 6
+                        rospy.loginfo("%s: Tiago NOOOOOO!", self.node_name)
+                        self.state = 5
 
                     rospy.sleep(3)
                 
@@ -206,7 +187,7 @@ class StateMachine(object):
                     print "Service call to move_head server failed: %s"%e
 
             # Error handling
-            if self.state == 6:
+            if self.state == 5:
                 rospy.logerr("%s: State machine failed. Check your code and try again!", self.node_name)
                 return
 
