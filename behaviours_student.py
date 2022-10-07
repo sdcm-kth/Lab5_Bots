@@ -206,7 +206,7 @@ class pickaruco(pt.behaviour.Behaviour):
     succesful and v.v...
     """
     
-    def __init__(self,direction):
+    def __init__(self):
         
         rospy.loginfo("Initialising pick aruco behaviour.")
         
@@ -259,7 +259,7 @@ class placearuco(pt.behaviour.Behaviour):
     succesful and v.v...
     """
     
-    def __init__(self,direction):
+    def __init__(self):
         
         rospy.loginfo("Initialising place aruco behaviour.")
         
@@ -303,4 +303,3 @@ class placearuco(pt.behaviour.Behaviour):
         # if still trying
         else:
             return pt.common.Status.RUNNING
-        
