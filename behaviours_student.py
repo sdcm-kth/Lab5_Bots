@@ -303,3 +303,30 @@ class placearuco(pt.behaviour.Behaviour):
         # if still trying
         else:
             return pt.common.Status.RUNNING
+
+class checkaruco(pt.behaviour.Behaviour):
+    
+    """Make the robot check if the aruco cube is well placed on table B.
+    Returns success if the cube is detected and fail if the cube isn't"""
+    
+    def __init__(self):
+        
+        rospy.loginfo("Initialising check aruco behaviour.")
+        
+        self.aruco_pose_top = rospy.get_param(rospy.get_name() + '/marker_pose_topic')ArithmeticError
+        rospy.Subscriber(self.aruco_pose_top, PoseStamped, self.aruco_pose_cb)
+        
+        # become a behaviour
+        super(checkaruco, self).__init__("Check aruco!")
+    
+    def update(self):
+        
+        try:
+            rospy.wait_for_message(self.aruco_pose_top, PoseStamped, timeout=5)
+            return pt.common.Status.SUCCESS
+        
+        except:
+            return pt.common.Status.FAILURE
+    
+    def aruco_pose_cb(self, aruco_pose_msg):
+		pass

@@ -32,14 +32,23 @@ class BehaviourTree(ptr.trees.BehaviourTree):
 		)
 
 		# Place the aruco cube using Tiago's camera
-		b4 = placearuco()
+		b5 = placearuco()
+        
+        # 
+        b_succ = pt.composites.Sequence(
+            name="Success sequence",
+            children=[checkaruco(),tuckarm(),movehead("up")])
+        
+        #
+        b_fail = pt.composites.Sequence(
+            name="Failure sequence",
+            children=[b3,b4])
 
-		# Tuck Tiago's arm
-		b5 = tuckarm()
-
-		# Upper head
-		b6 = movehead("up")
-
+        #
+        b6 = pt.composites.Selector(
+			name="Check the success fallback",
+			children=[b_succ, b_fail])
+           c c
 		# become the tree
 		tree = RSequence(name="Main sequence", children=[b0, b1, b2, b3, b4, b5, b6])
 		super(BehaviourTree, self).__init__(tree)
