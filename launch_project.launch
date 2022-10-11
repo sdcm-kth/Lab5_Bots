@@ -83,13 +83,13 @@
       <param name="nav_goal_topic"      value=""/>
       <param name="cmd_vel_topic"       value="/key_vel"/>
       <param name="move_base_frame"     value=""/>
-      <param name="pick_pose_topic"     value=""/>
-      <param name="place_pose_topic"    value=""/>
-      <param name="aruco_pose_topic"    value="/aruco_pose_topic"/>
+      <param name="pick_pose_topic"     value="/pick_pose_topic"/>
+      <param name="place_pose_topic"    value="/place_pose_topic"/>
+      <param name="aruco_pose_topic"    value="/aruco_position_topic"/>
       <param name="cube_pose"           value="0.50306828716, 0.0245718046511, 0.915538062216, 0.0144467629456, 0.706141958739, 0.707257659069, -0.0306827123383"/>
       <param name="robot_base_frame"          value="base_footprint" />
       <param name="move_head_srv"       value="/move_head_srv"/>
-      <param name="amcl_estimate"  value="" />
+      <param name="amcl_estimate"  value="/amcl_pose" />
       <param name="move_base_feedback"  value="" />
     </node>
 
@@ -104,7 +104,7 @@
 
     <!-- Node exposing service to trigger the pick and place -->
     <node pkg="robotics_project" name="manipulation_client" type="manipulation_client.py" output="screen">  
-      <param name="marker_pose_topic"   value="/aruco_pose_topic"/>
+      <param name="marker_pose_topic"   value="/aruco_position_topic"/>
       <param name="pick_srv"            value="/pick_gui"/>
       <param name="place_srv"           value="/place_gui"/>
       <param name="move_head_srv"       value="/move_head_srv"/>

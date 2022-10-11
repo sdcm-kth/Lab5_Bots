@@ -7,7 +7,7 @@ from numpy import linalg as LA
 import py_trees as pt, py_trees_ros as ptr, rospy
 from geometry_msgs.msg import Twist
 from std_srvs.srv import Empty, SetBool, SetBoolRequest
-from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
+from geometry_msgs.msg import PoseStamped, Vector3Stamped, PoseWithCovarianceStamped
 from play_motion_msgs.msg import PlayMotionAction, PlayMotionGoal
 from robotics_project.srv import MoveHead, MoveHeadRequest, MoveHeadResponse
  
@@ -21,7 +21,9 @@ for name in MoveItErrorCodes.__dict__.keys():
     if not name[:1] == '_':
         code = MoveItErrorCodes.__dict__[name]
         moveit_error_dict[code] = name
-        
+
+CHECK_CUBE = False
+DETECTED_CUBE = False
 
 
 class counter(pt.behaviour.Behaviour):
@@ -45,7 +47,6 @@ class counter(pt.behaviour.Behaviour):
 
         # increment i
         self.i += 1
-
         # succeed after count is done
         return pt.common.Status.FAILURE if self.i <= self.n else pt.common.Status.SUCCESS
 
@@ -188,10 +189,12 @@ class movehead(pt.behaviour.Behaviour):
         # if succesful
         elif self.move_head_req.success:
             self.done = True
+            rospy.loginfo("Tiago's head moved "+str(self.direction)+" successfully !")
             return pt.common.Status.SUCCESS
 
         # if failed
         elif not self.move_head_req.success:
+            rospy.loginfo("Tiago's head not moved "+str(self.direction)+" successfully...")
             return pt.common.Status.FAILURE
 
         # if still trying
@@ -313,20 +316,33 @@ class checkaruco(pt.behaviour.Behaviour):
         
         rospy.loginfo("Initialising check aruco behaviour.")
         
-        self.aruco_pose_top = rospy.get_param(rospy.get_name() + '/marker_pose_topic')ArithmeticError
-        rospy.Subscriber(self.aruco_pose_top, PoseStamped, self.aruco_pose_cb)
+        #self.aruco_pose_top = rospy.get_param(rospy.get_name() + '/marker_pose_topic')
+        self.aruco_pose_top = "/robotics_intro/aruco_single/position"
+        self.aruco_pose_subs =rospy.Subscriber(self.aruco_pose_top, Vector3Stamped, self.aruco_pose_cb)
         
         # become a behaviour
         super(checkaruco, self).__init__("Check aruco!")
     
     def update(self):
-        
-        try:
-            rospy.wait_for_message(self.aruco_pose_top, PoseStamped, timeout=5)
+        global CHECK_CUBE, DETECTED_CUBE
+        if CHECK_CUBE == False and DETECTED_CUBE == False:
+            try:
+                rospy.wait_for_message(self.aruco_pose_top, Vector3Stamped, timeout=5)
+                rospy.loginfo("Aruco detected on table B yasss")
+                CHECK_CUBE = True
+                DETECTED_CUBE = True
+                return pt.common.Status.SUCCESS
+            
+            except:
+                rospy.loginfo("Aruco not detected on table B :( ")
+                CHECK_CUBE = True
+                return pt.common.Status.FAILURE
+        elif DETECTED_CUBE == True :
             return pt.common.Status.SUCCESS
-        
-        except:
+        else :
             return pt.common.Status.FAILURE
     
     def aruco_pose_cb(self, aruco_pose_msg):
-		pass
+        self.aruco_pose_rcv = True
+        pass
+

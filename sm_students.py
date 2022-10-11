@@ -43,12 +43,10 @@ class StateMachine(object):
         # Subscribe to topics
         #everything is manual
         # Wait for service providers to react
-        print("landmark 1")
         rospy.wait_for_service(self.mv_head_srv_nm, timeout=30)
         rospy.wait_for_service(self.pick_srv_nm,timeout=30)
         rospy.wait_for_service(self.place_srv_nm,timeout=30)
         # Instantiate publishers
-        print("Did yoou advance?")
         self.cmd_vel_pub = rospy.Publisher(self.cmd_vel_top, Twist, queue_size=10) #node is publishing to cmd_vel topic 
         #With message type Twist and max number of messages is 10
         self.cube_pose_pub =rospy.Publisher('/aruco_pose_topic', PoseStamped, queue_size=10) 
