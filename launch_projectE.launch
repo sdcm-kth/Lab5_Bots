@@ -23,7 +23,7 @@
   <arg name="global_planner"  default="navfn"/>
   <arg name="local_planner"   default="eband"/>
   <arg name="planner"         default="base"/>
-  
+
   <!-- Simulation -->
   <arg name="robot"       default="steel"/>
   <arg name="rviz"        default="true"/>
@@ -78,8 +78,8 @@
     <node pkg="robotics_project" type="sm_students.py" name="logic_state_machine" output="screen">
       <param name="global_loc_srv" value=""/>
       <param name="clear_costmaps_srv"  value=""/>
-      <param name="pick_srv"            value="/pick_gui"/>
-      <param name="place_srv"           value="/place_gui"/>
+      <param name="pick_srv"            value="/pick_srv"/>
+      <param name="place_srv"           value="/place_srv"/>
       <param name="nav_goal_topic"      value=""/>
       <param name="cmd_vel_topic"       value="/key_vel"/>
       <param name="move_base_frame"     value=""/>
@@ -88,7 +88,7 @@
       <param name="aruco_pose_topic"    value="/aruco_pose_topic"/>
       <param name="cube_pose"           value="0.50306828716, 0.0245718046511, 0.915538062216, 0.0144467629456, 0.706141958739, 0.707257659069, -0.0306827123383"/>
       <param name="robot_base_frame"          value="base_footprint" />
-      <param name="move_head_srv"       value="/move_head_srv"/>
+      <param name="move_head_srv"       value="/$(arg namespace_project)/move_head_gui"/>
       <param name="amcl_estimate"  value="" />
       <param name="move_base_feedback"  value="" />
     </node>
@@ -105,9 +105,9 @@
     <!-- Node exposing service to trigger the pick and place -->
     <node pkg="robotics_project" name="manipulation_client" type="manipulation_client.py" output="screen">  
       <param name="marker_pose_topic"   value="/aruco_pose_topic"/>
-      <param name="pick_srv"            value="/pick_gui"/>
-      <param name="place_srv"           value="/place_gui"/>
-      <param name="move_head_srv"       value="/move_head_srv"/>
+      <param name="pick_srv"            value="/pick_srv"/>
+      <param name="place_srv"           value="/place_srv"/>
+      <param name="move_head_srv"       value="/$(arg namespace_project)/move_head_gui"/>
       <param name="pickup_marker_pose"  value="/pickup_marker"/>
       <param name="place_marker_pose"   value="/place_marker"/>
     </node>
@@ -115,11 +115,11 @@
     <!-- Aruco marker detector -->
 <!--     <node pkg="aruco_ros" type="single"  name="aruco_single" output="screen">
         <param name="camera_frame"        value="xtion_rgb_optical_frame"/>
-        <param name="aruco_frame"        value="/aruco_frame" />
+        <param name="aruco_frame"        value="" />
         <remap from="/camera_info"        to="/xtion/rgb/camera_info" />
         <remap from="/image"              to="/xtion/rgb/image_rect_color" />
-        <param name="marker_pose_topic"   value="/aruco_position_topic"/>
-        <param name="robot_base_frame"          value="base_footprint"/>
+        <param name="marker_pose_topic"   value="/place_holder12"/>
+        <param name="robot_base_frame"          value=""/>
     </node> -->
   </group>
 
