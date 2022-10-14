@@ -56,17 +56,6 @@ class BehaviourTree(ptr.trees.BehaviourTree):
         # Place the aruco cube using Tiago's camera
         b5 = placearuco()
 
-        # Check if the aruco cube is actually on Table B
-        b6 = pt.composites.Selector(
-            name="Check the success fallback",
-            memory = True,
-            children=[checkaruco(), b_fail])
-
-        # Once the robot detects the aruco or reaches table A, tuck the arm and move head up
-        b7 = pt.composites.Sequence(
-            name="Success sequence",
-            children=[tuckarm(),movehead("up")])
-
         # If the aruco isn't detected, the aruco comes back to table A
         b_fail = pt.composites.Sequence(
             name="Failure sequence",
@@ -78,6 +67,17 @@ class BehaviourTree(ptr.trees.BehaviourTree):
             children=[counter(14, "At chair A?"), go("Go back to chair!", 0.5, 0)]
         )])
 
+        # Check if the aruco cube is actually on Table B
+        b6 = pt.composites.Selector(
+            name="Check the success fallback",
+            memory = True,
+            children=[checkaruco(), b_fail])
+
+        # Once the robot detects the aruco or reaches table A, tuck the arm and move head up
+        b7 = pt.composites.Sequence(
+            name="Success sequence",
+            children=[tuckarm(),movehead("up")])
+            
         # Become the tree
         tree = RSequence(name="Main sequence", children=[b0, b1, b2, b3, b4, b5, b6, b7])
         super(BehaviourTree, self).__init__(tree)
@@ -412,3 +412,15 @@ class checkaruco(pt.behaviour.Behaviour):
     def aruco_pose_cb(self, aruco_pose_msg):
         self.aruco_pose_rcv = True
         pass
+
+
+if __name__ == "__main__":
+
+
+	rospy.init_node('main_state_machine')
+	try:
+		BehaviourTree()
+	except rospy.ROSInterruptException:
+		pass
+
+	rospy.spin()
